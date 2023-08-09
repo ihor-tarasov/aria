@@ -137,8 +137,37 @@ fn term<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResul
     })
 }
 
+fn shifts<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
+    multiple_binary_helper(stream, builder, term, |token| match token {
+        Token::Double(b'<', b'<') => Some(SHL),
+        Token::Double(b'>', b'>') => Some(SHR),
+        _ => None,
+    })
+}
+
+fn and<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
+    multiple_binary_helper(stream, builder, shifts, |token| match token {
+        Token::Single(b'&') => Some(AND),
+        _ => None,
+    })
+}
+
+fn xor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
+    multiple_binary_helper(stream, builder, and, |token| match token {
+        Token::Single(b'^') => Some(XOR),
+        _ => None,
+    })
+}
+
+fn or<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
+    multiple_binary_helper(stream, builder, xor, |token| match token {
+        Token::Single(b'|') => Some(OR),
+        _ => None,
+    })
+}
+
 fn comparison<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
-    single_binary_helper(stream, builder, term, |token| match token {
+    single_binary_helper(stream, builder, or, |token| match token {
         Token::Single(b'<') => Some(LS),
         Token::Single(b'>') => Some(GR),
         Token::Double(b'<', b'=') => Some(LE),

@@ -6,16 +6,52 @@ pub trait Reader {
     fn offset(&self) -> usize;
 }
 
-fn lex_double<R: Reader>(reader: &mut R, c: u8) -> Token {
-    if let Some(c2) = reader.current() {
-        if [(b'=', b'='), (b'!', b'='), (b'<', b'='), (b'>', b'=')].contains(&(c, c2)) {
-            reader.advance();
-            Token::Double(c, c2)
-        } else {
-            Token::Single(c)
+fn lex_double<R: Reader>(reader: &mut R, c0: u8, c1: u8) -> Token {
+    reader.advance();
+    Token::Double(c0, c1)
+}
+
+fn lex_equal<R: Reader>(reader: &mut R, c0: u8) -> Token {
+    if let Some(c1) = reader.current() {
+        match c1 {
+            b'=' => lex_double(reader, c0, c1),
+            _ => Token::Single(c0),
         }
     } else {
-        Token::Single(c)
+        Token::Single(c0)
+    }
+}
+
+fn lex_exclamation<R: Reader>(reader: &mut R, c0: u8) -> Token {
+    if let Some(c1) = reader.current() {
+        match c1 {
+            b'=' => lex_double(reader, c0, c1),
+            _ => Token::Single(c0),
+        }
+    } else {
+        Token::Single(c0)
+    }
+}
+
+fn lex_less<R: Reader>(reader: &mut R, c0: u8) -> Token {
+    if let Some(c1) = reader.current() {
+        match c1 {
+            b'=' | b'<' => lex_double(reader, c0, c1),
+            _ => Token::Single(c0),
+        }
+    } else {
+        Token::Single(c0)
+    }
+}
+
+fn lex_greater<R: Reader>(reader: &mut R, c0: u8) -> Token {
+    if let Some(c1) = reader.current() {
+        match c1 {
+            b'=' | b'>' => lex_double(reader, c0, c1),
+            _ => Token::Single(c0),
+        }
+    } else {
+        Token::Single(c0)
     }
 }
 
@@ -52,7 +88,10 @@ fn lex_token<R: Reader>(reader: &mut R) -> Option<Token> {
     reader.advance();
     Some(match c {
         b'0'..=b'9' => lex_number(reader, c),
-        b'=' | b'!' | b'<' | b'>' => lex_double(reader, c),
+        b'=' => lex_equal(reader, c),
+        b'!' => lex_exclamation(reader, c),
+        b'<' => lex_less(reader, c),
+        b'>' => lex_greater(reader, c),
         _ => Token::Single(c),
     })
 }

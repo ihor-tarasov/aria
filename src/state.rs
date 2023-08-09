@@ -207,6 +207,57 @@ impl<S: Stack> State<S> {
         }
     }
 
+    fn op_and(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Integer(l & r)),
+            _ => self.op_error("&", l, r),
+        }
+    }
+
+    fn op_or(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Integer(l | r)),
+            _ => self.op_error("|", l, r),
+        }
+    }
+
+    fn op_xor(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Integer(l ^ r)),
+            _ => self.op_error("^", l, r),
+        }
+    }
+
+    fn op_shift_left(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => {
+                if r < 0 {
+                    self.error(format!("Unable to use '<<' operator for {l} and {r}, right hand side must be positive."), VMError::BinaryOperator)
+                } else if r > u32::MAX as i64 {
+                    self.error(format!("Unable to use '<<' operator for {l} and {r}, right hand side value to big."), VMError::BinaryOperator)
+                } else {
+                    Ok(Value::Integer(l.wrapping_shl(r as u32)))
+                }
+            }
+            _ => self.op_error("<<", l, r),
+        }
+    }
+
+    fn op_shift_right(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => {
+                if r < 0 {
+                    self.error(format!("Unable to use '>>' operator for {l} and {r}, right hand side must be positive."), VMError::BinaryOperator)
+                } else if r > u32::MAX as i64 {
+                    self.error(format!("Unable to use '>>' operator for {l} and {r}, right hand side value to big."), VMError::BinaryOperator)
+                } else {
+                    Ok(Value::Integer(l.wrapping_shr(r as u32)))
+                }
+            }
+            _ => self.op_error(">>", l, r),
+        }
+    }
+
     pub fn addict(&mut self) -> VMResult<()> {
         self.binary(Self::op_addict)
     }
@@ -249,5 +300,25 @@ impl<S: Stack> State<S> {
 
     pub fn not_equals(&mut self) -> VMResult<()> {
         self.binary(Self::op_not_equals)
+    }
+
+    pub fn and(&mut self) -> VMResult<()> {
+        self.binary(Self::op_and)
+    }
+
+    pub fn or(&mut self) -> VMResult<()> {
+        self.binary(Self::op_or)
+    }
+
+    pub fn xor(&mut self) -> VMResult<()> {
+        self.binary(Self::op_xor)
+    }
+
+    pub fn shift_left(&mut self) -> VMResult<()> {
+        self.binary(Self::op_shift_left)
+    }
+
+    pub fn shift_right(&mut self) -> VMResult<()> {
+        self.binary(Self::op_shift_right)
     }
 }

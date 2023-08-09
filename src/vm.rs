@@ -39,6 +39,11 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
         GE => state.single(State::greater_equals),
         EQ => state.single(State::equals),
         NE => state.single(State::not_equals),
+        AND => state.single(State::and),
+        OR => state.single(State::or),
+        XOR => state.single(State::xor),
+        SHL => state.single(State::shift_left),
+        SHR => state.single(State::shift_right),
         _ => Err(VMError::UnknownInstruction),
     }
 }
