@@ -138,6 +138,66 @@ impl<S: Stack> State<S> {
         }
     }
 
+    fn op_less(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Boolean(l < r)),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Boolean((l as f64) < r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Boolean(l < r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Boolean(l < r)),
+            _ => self.op_error("<", l, r),
+        }
+    }
+
+    fn op_greater(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Boolean(l > r)),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Boolean((l as f64) > r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Boolean(l > r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Boolean(l > r)),
+            _ => self.op_error(">", l, r),
+        }
+    }
+
+    fn op_less_equals(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Boolean(l <= r)),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Boolean((l as f64) <= r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Boolean(l <= r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Boolean(l <= r)),
+            _ => self.op_error("<=", l, r),
+        }
+    }
+
+    fn op_greater_equals(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Boolean(l >= r)),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Boolean((l as f64) >= r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Boolean(l >= r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Boolean(l >= r)),
+            _ => self.op_error(">=", l, r),
+        }
+    }
+
+    fn op_equals(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Boolean(l == r)),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Boolean((l as f64) == r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Boolean(l == r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Boolean(l == r)),
+            _ => self.op_error("==", l, r),
+        }
+    }
+
+    fn op_not_equals(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Boolean(l != r)),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Boolean((l as f64) != r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Boolean(l != r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Boolean(l != r)),
+            _ => self.op_error("!=", l, r),
+        }
+    }
+
     pub fn addict(&mut self) -> VMResult<()> {
         self.binary(Self::op_addict)
     }
@@ -156,5 +216,29 @@ impl<S: Stack> State<S> {
 
     pub fn module(&mut self) -> VMResult<()> {
         self.binary(Self::op_module)
+    }
+
+    pub fn less(&mut self) -> VMResult<()> {
+        self.binary(Self::op_less)
+    }
+
+    pub fn greater(&mut self) -> VMResult<()> {
+        self.binary(Self::op_greater)
+    }
+
+    pub fn less_equals(&mut self) -> VMResult<()> {
+        self.binary(Self::op_less_equals)
+    }
+
+    pub fn greater_equals(&mut self) -> VMResult<()> {
+        self.binary(Self::op_greater_equals)
+    }
+
+    pub fn equals(&mut self) -> VMResult<()> {
+        self.binary(Self::op_equals)
+    }
+
+    pub fn not_equals(&mut self) -> VMResult<()> {
+        self.binary(Self::op_not_equals)
     }
 }

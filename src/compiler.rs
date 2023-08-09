@@ -61,6 +61,11 @@ fn primary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRe
                 message: format!("Expected value, found character {}.", c as char).into(),
                 pos: token_and_pos.pos,
             }),
+            Token::Double(c0, c1) => Err(CompileError {
+                message: format!("Expected value, found token {}{}.", c0 as char, c1 as char)
+                    .into(),
+                pos: token_and_pos.pos,
+            }),
         },
         None => Err(CompileError {
             message: "Unexpected end of code.".into(),
@@ -69,7 +74,7 @@ fn primary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRe
     }
 }
 
-fn binary_helper<S: Stream, P: PushByte, N, M>(
+fn multiple_binary_helper<S: Stream, P: PushByte, N, M>(
     stream: &mut S,
     builder: &mut P,
     next: N,
@@ -93,8 +98,30 @@ where
     Ok(())
 }
 
+fn single_binary_helper<S: Stream, P: PushByte, N, M>(
+    stream: &mut S,
+    builder: &mut P,
+    next: N,
+    mapper: M,
+) -> CompileResult
+where
+    N: Fn(&mut S, &mut P) -> CompileResult,
+    M: Fn(&Token) -> Option<u8>,
+{
+    next(stream, builder)?;
+    if let Some(token_and_pos) = stream.peek() {
+        if let Some(opcode) = mapper(&token_and_pos.token) {
+            let _pos = token_and_pos.pos.clone();
+            stream.next();
+            next(stream, builder)?;
+            builder.push_byte(opcode);
+        }
+    }
+    Ok(())
+}
+
 fn factor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
-    binary_helper(stream, builder, primary, |token| match token {
+    multiple_binary_helper(stream, builder, primary, |token| match token {
         Token::Single(b'*') => Some(MUL),
         Token::Single(b'/') => Some(DIV),
         Token::Single(b'%') => Some(MOD),
@@ -103,15 +130,27 @@ fn factor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRes
 }
 
 fn term<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
-    binary_helper(stream, builder, factor, |token| match token {
+    multiple_binary_helper(stream, builder, factor, |token| match token {
         Token::Single(b'+') => Some(ADD),
         Token::Single(b'-') => Some(SUB),
         _ => None,
     })
 }
 
+fn comparison<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
+    single_binary_helper(stream, builder, term, |token| match token {
+        Token::Single(b'<') => Some(LS),
+        Token::Single(b'>') => Some(GR),
+        Token::Double(b'<', b'=') => Some(LE),
+        Token::Double(b'>', b'=') => Some(GE),
+        Token::Double(b'=', b'=') => Some(EQ),
+        Token::Double(b'!', b'=') => Some(NE),
+        _ => None,
+    })
+}
+
 fn binary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
-    term(stream, builder)
+    comparison(stream, builder)
 }
 
 fn expression<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
@@ -135,6 +174,14 @@ pub fn compile<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> Compi
             }),
             Token::Single(c) => Err(CompileError {
                 message: format!("Expected end of code, found character '{}'.", c as char).into(),
+                pos: token_and_pos.pos,
+            }),
+            Token::Double(c0, c1) => Err(CompileError {
+                message: format!(
+                    "Expected end of code, found token '{}{}'.",
+                    c0 as char, c1 as char
+                )
+                .into(),
                 pos: token_and_pos.pos,
             }),
         },

@@ -53,6 +53,36 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
             state.program_counter += 1;
             Ok(true)
         }
+        LS => {
+            state.less()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
+        GR => {
+            state.greater()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
+        LE => {
+            state.less_equals()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
+        GE => {
+            state.greater_equals()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
+        EQ => {
+            state.equals()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
+        NE => {
+            state.not_equals()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
         _ => Err(VMError::UnknownInstruction),
     }
 }

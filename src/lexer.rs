@@ -6,6 +6,19 @@ pub trait Reader {
     fn offset(&self) -> usize;
 }
 
+fn lex_double<R: Reader>(reader: &mut R, c: u8) -> Token {
+    if let Some(c2) = reader.current() {
+        if [(b'=', b'='), (b'!', b'='), (b'<', b'='), (b'>', b'=')].contains(&(c, c2)) {
+            reader.advance();
+            Token::Double(c, c2)
+        } else {
+            Token::Single(c)
+        }
+    } else {
+        Token::Single(c)
+    }
+}
+
 fn lex_number<R: Reader>(reader: &mut R, c: u8) -> Token {
     let mut result = (c - b'0') as i64;
     let mut digits_after_dot = 0u32;
@@ -39,6 +52,7 @@ fn lex_token<R: Reader>(reader: &mut R) -> Option<Token> {
     reader.advance();
     Some(match c {
         b'0'..=b'9' => lex_number(reader, c),
+        b'=' | b'!' | b'<' | b'>' => lex_double(reader, c),
         _ => Token::Single(c),
     })
 }
