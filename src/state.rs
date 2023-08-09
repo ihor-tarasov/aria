@@ -69,6 +69,15 @@ impl<S: Stack> State<S> {
         Err(e)
     }
 
+    pub fn single<F>(&mut self, f: F) -> VMResult<bool>
+    where
+        F: Fn(&mut Self) -> VMResult<()>,
+    {
+        f(self)?;
+        self.program_counter += 1;
+        Ok(true)
+    }
+
     fn op_error(&mut self, operator: &str, l: Value, r: Value) -> VMResult<Value> {
         self.error(
             format!("Unable to use '{operator}' for {l} and {r} values."),

@@ -28,61 +28,17 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
             state.program_counter += 1 + core::mem::size_of_val(&value);
             Ok(true)
         }
-        ADD => {
-            state.addict()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        MUL => {
-            state.multiply()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        SUB => {
-            state.subtract()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        DIV => {
-            state.divide()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        MOD => {
-            state.module()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        LS => {
-            state.less()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        GR => {
-            state.greater()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        LE => {
-            state.less_equals()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        GE => {
-            state.greater_equals()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        EQ => {
-            state.equals()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
-        NE => {
-            state.not_equals()?;
-            state.program_counter += 1;
-            Ok(true)
-        }
+        ADD => state.single(State::addict),
+        MUL => state.single(State::multiply),
+        SUB => state.single(State::subtract),
+        DIV => state.single(State::divide),
+        MOD => state.single(State::module),
+        LS => state.single(State::less),
+        GR => state.single(State::greater),
+        LE => state.single(State::less_equals),
+        GE => state.single(State::greater_equals),
+        EQ => state.single(State::equals),
+        NE => state.single(State::not_equals),
         _ => Err(VMError::UnknownInstruction),
     }
 }
