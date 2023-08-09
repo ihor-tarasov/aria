@@ -6,11 +6,39 @@ pub trait Reader {
     fn offset(&self) -> usize;
 }
 
+fn lex_number<R: Reader>(reader: &mut R, c: u8) -> Token {
+    let mut result = (c - b'0') as i64;
+    let mut digits_after_dot = 0u32;
+    while let Some(c) = reader.current() {
+        if c.is_ascii_digit() {
+            result = result * 10 + (c - b'0') as i64;
+            reader.advance();
+            if digits_after_dot != 0 {
+                digits_after_dot += 1;
+            }
+        } else if c == b'.' {
+            if digits_after_dot == 0 {
+                digits_after_dot = 1;
+                reader.advance();
+            } else {
+                break; // We supporting only one '.' in number.
+            }
+        } else {
+            break;
+        }
+    }
+    if digits_after_dot == 0 {
+        Token::Integer(result)
+    } else {
+        Token::Real(result as f64 / 10u64.pow(digits_after_dot - 1) as f64)
+    }
+}
+
 fn lex_token<R: Reader>(reader: &mut R) -> Option<Token> {
     let c = reader.current()?;
     reader.advance();
     Some(match c {
-        b'0'..=b'9' => Token::Integer((c - b'0') as i64),
+        b'0'..=b'9' => lex_number(reader, c),
         _ => Token::Single(c),
     })
 }

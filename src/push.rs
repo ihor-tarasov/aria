@@ -13,10 +13,18 @@ pub trait PushData<T> {
     fn push_data(&mut self, value: T);
 }
 
-impl<P: PushByte> PushData<i64> for P {
-    fn push_data(&mut self, value: i64) {
-        for b in value.to_be_bytes().iter().cloned() {
-            self.push_byte(b);
-        }
-    }
+macro_rules! impl_push_data {
+    ($($t:ty),*) => {
+        $(
+            impl<P: PushByte> PushData<$t> for P {
+                fn push_data(&mut self, value: $t) {
+                    for b in value.to_be_bytes().iter().cloned() {
+                        self.push_byte(b);
+                    }
+                }
+            }
+        )*
+    };
 }
+
+impl_push_data!(i64, f64);

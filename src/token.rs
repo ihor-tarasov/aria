@@ -1,6 +1,7 @@
 #[derive(PartialEq)]
 pub enum Token {
     Integer(i64),
+    Real(f64),
     Single(u8),
 }
 

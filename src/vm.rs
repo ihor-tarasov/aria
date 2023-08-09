@@ -20,6 +20,14 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
             state.program_counter += 1 + core::mem::size_of_val(&value);
             Ok(true)
         }
+        LDR => {
+            let value = program
+                .get_data(state.program_counter + 1)
+                .ok_or(VMError::OpcodeFetch)?;
+            state.push(Value::Real(value))?;
+            state.program_counter += 1 + core::mem::size_of_val(&value);
+            Ok(true)
+        }
         ADD => {
             state.addict()?;
             state.program_counter += 1;

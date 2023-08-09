@@ -52,6 +52,11 @@ fn primary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRe
                 builder.push_data(value);
                 Ok(())
             }
+            Token::Real(value) => {
+                builder.push_byte(LDR);
+                builder.push_data(value);
+                Ok(())
+            }
             Token::Single(c) => Err(CompileError {
                 message: format!("Expected value, found character {}.", c as char).into(),
                 pos: token_and_pos.pos,
@@ -121,6 +126,10 @@ pub fn compile<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> Compi
         Some(token_and_pos) => match token_and_pos.token {
             Token::Integer(value) => Err(CompileError {
                 message: format!("Expected end of code, found integer '{value}'.").into(),
+                pos: token_and_pos.pos,
+            }),
+            Token::Real(value) => Err(CompileError {
+                message: format!("Expected end of code, found real '{value}'.").into(),
                 pos: token_and_pos.pos,
             }),
             Token::Single(c) => Err(CompileError {
