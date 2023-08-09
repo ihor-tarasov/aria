@@ -16,6 +16,18 @@ pub enum Message {
     Static(&'static str),
 }
 
+impl From<&'static str> for Message {
+    fn from(value: &'static str) -> Self {
+        Message::Static(value)
+    }
+}
+
+impl From<String> for Message {
+    fn from(value: String) -> Self {
+        Message::Owned(value.into_boxed_str())
+    }
+}
+
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -41,14 +53,12 @@ fn primary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRe
                 Ok(())
             }
             Token::Single(c) => Err(CompileError {
-                message: Message::Owned(
-                    format!("Expected value, found character {}.", c as char).into_boxed_str(),
-                ),
+                message: format!("Expected value, found character {}.", c as char).into(),
                 pos: token_and_pos.pos,
             }),
         },
         None => Err(CompileError {
-            message: Message::Static("Unexpected end of code."),
+            message: "Unexpected end of code.".into(),
             pos: 0..0,
         }),
     }
@@ -110,16 +120,11 @@ pub fn compile<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> Compi
     match stream.next() {
         Some(token_and_pos) => match token_and_pos.token {
             Token::Integer(value) => Err(CompileError {
-                message: Message::Owned(
-                    format!("Expected end of code, found integer '{value}'.").into_boxed_str(),
-                ),
+                message: format!("Expected end of code, found integer '{value}'.").into(),
                 pos: token_and_pos.pos,
             }),
             Token::Single(c) => Err(CompileError {
-                message: Message::Owned(
-                    format!("Expected end of code, found character '{}'.", c as char)
-                        .into_boxed_str(),
-                ),
+                message: format!("Expected end of code, found character '{}'.", c as char).into(),
                 pos: token_and_pos.pos,
             }),
         },
