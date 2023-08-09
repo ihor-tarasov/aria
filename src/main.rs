@@ -8,7 +8,9 @@ use tpc::{
     },
     line,
     push::IntoGetByte,
-    state, vm,
+    state,
+    value::Value,
+    vm,
 };
 
 fn print_error(error: CompileError, slice: &[u8]) {
@@ -19,7 +21,7 @@ fn print_error(error: CompileError, slice: &[u8]) {
     println!("{}", error.message);
 }
 
-fn run_slice<S: AsRef<[u8]>>(slice: S) -> Option<i64> {
+fn run_slice<S: AsRef<[u8]>>(slice: S) -> Option<Value> {
     let reader = slice_reader::new(slice.as_ref());
     let mut stream = token_stream::new(reader);
     let mut builder = vec_push::new();
@@ -35,7 +37,11 @@ fn run_slice<S: AsRef<[u8]>>(slice: S) -> Option<i64> {
     match vm::run(&mut state, &program) {
         Ok(value) => Some(value),
         Err(error) => {
-            println!("Runtime error: {error}");
+            if let Some(message) = state.message {
+                println!("Runtime error: {message}");
+            } else {
+                println!("Runtime error: {error:?}");
+            }
             None
         }
     }
@@ -56,5 +62,5 @@ fn main() {
 
 #[test]
 fn base_test() {
-    assert_eq!(run_slice("2 + 2 * 2"), Some(6))
+    assert_eq!(run_slice("2 + 2 * 2"), Some(Value::Integer(6)))
 }

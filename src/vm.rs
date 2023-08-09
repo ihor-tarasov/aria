@@ -3,6 +3,7 @@ use crate::{
     opcode::*,
     state::*,
     state::{VMError, VMResult},
+    value::Value,
 };
 
 fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<bool> {
@@ -15,7 +16,7 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
             let value = program
                 .get_data(state.program_counter + 1)
                 .ok_or(VMError::OpcodeFetch)?;
-            state.push(value)?;
+            state.push(Value::Integer(value))?;
             state.program_counter += 1 + core::mem::size_of_val(&value);
             Ok(true)
         }
@@ -33,7 +34,7 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
     }
 }
 
-pub fn run<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<i64> {
+pub fn run<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<Value> {
     while step(state, program)? {}
     state.pop()
 }

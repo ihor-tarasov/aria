@@ -1,19 +1,21 @@
+use crate::value::Value;
+
 use super::data_stack::Data;
 
-struct StaticData<const SIZE: usize>([i64; SIZE]);
+struct StaticData<const SIZE: usize>([Value; SIZE]);
 
 impl<const SIZE: usize> StaticData<SIZE> {
     fn new() -> Self {
-        Self([0; SIZE])
+        Self([Value::Void; SIZE])
     }
 }
 
 impl<const SIZE: usize> Data for StaticData<SIZE> {
-    fn get(&self, index: usize) -> Option<&i64> {
+    fn get(&self, index: usize) -> Option<&Value> {
         self.0.get(index)
     }
 
-    fn get_mut(&mut self, index: usize) -> Option<&mut i64> {
+    fn get_mut(&mut self, index: usize) -> Option<&mut Value> {
         self.0.get_mut(index)
     }
 

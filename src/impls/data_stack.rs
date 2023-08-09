@@ -1,11 +1,12 @@
 use crate::{
     state::Stack,
     state::{VMError, VMResult},
+    value::Value,
 };
 
 pub trait Data {
-    fn get(&self, index: usize) -> Option<&i64>;
-    fn get_mut(&mut self, index: usize) -> Option<&mut i64>;
+    fn get(&self, index: usize) -> Option<&Value>;
+    fn get_mut(&mut self, index: usize) -> Option<&mut Value>;
     fn len(&self) -> usize;
 }
 
@@ -21,7 +22,7 @@ impl<D> DataStack<D> {
 }
 
 impl<D: Data> Stack for DataStack<D> {
-    fn push(&mut self, value: i64) -> VMResult<()> {
+    fn push(&mut self, value: Value) -> VMResult<()> {
         self.data
             .get_mut(self.top)
             .and_then(|d| {
@@ -31,7 +32,7 @@ impl<D: Data> Stack for DataStack<D> {
             .ok_or(VMError::StackOverflow)
     }
 
-    fn pop(&mut self) -> VMResult<i64> {
+    fn pop(&mut self) -> VMResult<Value> {
         if self.top == 0 {
             Err(VMError::StackUnderflow)
         } else {
