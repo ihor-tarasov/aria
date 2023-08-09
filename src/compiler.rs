@@ -54,14 +54,23 @@ fn primary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRe
     }
 }
 
-fn factor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
-    primary(stream, builder)?;
-    while let Some(token) = stream.peek() {
-        if token.token == Token::Single(b'*') {
-            let _pos = token.pos.clone();
+fn binary_helper<S: Stream, P: PushByte, N, M>(
+    stream: &mut S,
+    builder: &mut P,
+    next: N,
+    mapper: M,
+) -> CompileResult
+where
+    N: Fn(&mut S, &mut P) -> CompileResult,
+    M: Fn(&Token) -> Option<u8>,
+{
+    next(stream, builder)?;
+    while let Some(token_and_pos) = stream.peek() {
+        if let Some(opcode) = mapper(&token_and_pos.token) {
+            let _pos = token_and_pos.pos.clone();
             stream.next();
-            primary(stream, builder)?;
-            builder.push_byte(MUL);
+            next(stream, builder)?;
+            builder.push_byte(opcode);
         } else {
             break;
         }
@@ -69,19 +78,20 @@ fn factor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRes
     Ok(())
 }
 
+fn factor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
+    binary_helper(stream, builder, primary, |token| match token {
+        Token::Single(b'*') => Some(MUL),
+        Token::Single(b'/') => Some(DIV),
+        _ => None,
+    })
+}
+
 fn term<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {
-    factor(stream, builder)?;
-    while let Some(token) = stream.peek() {
-        if token.token == Token::Single(b'+') {
-            let _pos = token.pos.clone();
-            stream.next();
-            factor(stream, builder)?;
-            builder.push_byte(ADD);
-        } else {
-            break;
-        }
-    }
-    Ok(())
+    binary_helper(stream, builder, factor, |token| match token {
+        Token::Single(b'+') => Some(ADD),
+        Token::Single(b'-') => Some(SUB),
+        _ => None,
+    })
 }
 
 fn binary<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileResult {

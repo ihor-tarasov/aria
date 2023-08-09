@@ -1,12 +1,27 @@
+use core::fmt;
+
 use crate::value::Value;
 
-#[derive(Debug)]
 pub enum VMError {
     StackOverflow,
     StackUnderflow,
     UnknownInstruction,
     OpcodeFetch,
     BinaryOperator,
+    DividingByZero,
+}
+
+impl fmt::Display for VMError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VMError::StackOverflow => write!(f, "Stack overflow."),
+            VMError::StackUnderflow => write!(f, "Stack underflow."),
+            VMError::UnknownInstruction => write!(f, "Unknown instruction."),
+            VMError::OpcodeFetch => write!(f, "Unable to fetch opcode."),
+            VMError::BinaryOperator => write!(f, "Binary operator error."),
+            VMError::DividingByZero => write!(f, "Dividing by zero."),
+        }
+    }
 }
 
 pub type VMResult<T> = Result<T, VMError>;
@@ -49,10 +64,16 @@ impl<S: Stack> State<S> {
         self.push(result)
     }
 
+    fn error<T>(&mut self, m: String, e: VMError) -> VMResult<T> {
+        self.message = Some(m.into_boxed_str());
+        Err(e)
+    }
+
     fn op_error(&mut self, operator: &str, l: Value, r: Value) -> VMResult<Value> {
-        self.message =
-            Some(format!("Unable to use '{operator}' for {l} and {r} values.").into_boxed_str());
-        Err(VMError::BinaryOperator)
+        self.error(
+            format!("Unable to use '{operator}' for {l} and {r} values."),
+            VMError::BinaryOperator,
+        )
     }
 
     fn op_addict(&mut self, l: Value, r: Value) -> VMResult<Value> {
@@ -75,11 +96,45 @@ impl<S: Stack> State<S> {
         }
     }
 
+    fn op_subtract(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => Ok(Value::Integer(l.wrapping_sub(r))),
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Real(l as f64 - r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Real(l - r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l - r)),
+            _ => self.op_error("-", l, r),
+        }
+    }
+
+    fn op_divide(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => {
+                if r == 0 {
+                    Err(VMError::DividingByZero)
+                } else {
+                    Ok(Value::Integer(l.wrapping_div(r)))
+                }
+            }
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Real(l as f64 / r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Real(l / r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l / r)),
+            _ => self.op_error("/", l, r),
+        }
+    }
+
     pub fn addict(&mut self) -> VMResult<()> {
         self.binary(Self::op_addict)
     }
 
     pub fn multiply(&mut self) -> VMResult<()> {
         self.binary(Self::op_multiply)
+    }
+
+    pub fn subtract(&mut self) -> VMResult<()> {
+        self.binary(Self::op_subtract)
+    }
+
+    pub fn divide(&mut self) -> VMResult<()> {
+        self.binary(Self::op_divide)
     }
 }

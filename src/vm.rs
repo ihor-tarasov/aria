@@ -30,6 +30,16 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
             state.program_counter += 1;
             Ok(true)
         }
+        SUB => {
+            state.subtract()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
+        DIV => {
+            state.divide()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
         _ => Err(VMError::UnknownInstruction),
     }
 }

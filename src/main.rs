@@ -40,7 +40,7 @@ fn run_slice<S: AsRef<[u8]>>(slice: S) -> Option<Value> {
             if let Some(message) = state.message {
                 println!("Runtime error: {message}");
             } else {
-                println!("Runtime error: {error:?}");
+                println!("Runtime error: {error}");
             }
             None
         }
