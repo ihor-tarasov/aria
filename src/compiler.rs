@@ -97,6 +97,7 @@ fn factor<S: Stream, P: PushByte>(stream: &mut S, builder: &mut P) -> CompileRes
     binary_helper(stream, builder, primary, |token| match token {
         Token::Single(b'*') => Some(MUL),
         Token::Single(b'/') => Some(DIV),
+        Token::Single(b'%') => Some(MOD),
         _ => None,
     })
 }

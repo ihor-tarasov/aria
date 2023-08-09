@@ -48,6 +48,11 @@ fn step<S: Stack, G: GetByte>(state: &mut State<S>, program: &G) -> VMResult<boo
             state.program_counter += 1;
             Ok(true)
         }
+        MOD => {
+            state.module()?;
+            state.program_counter += 1;
+            Ok(true)
+        }
         _ => Err(VMError::UnknownInstruction),
     }
 }

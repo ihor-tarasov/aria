@@ -122,6 +122,22 @@ impl<S: Stack> State<S> {
         }
     }
 
+    fn op_module(&mut self, l: Value, r: Value) -> VMResult<Value> {
+        match (l, r) {
+            (Value::Integer(l), Value::Integer(r)) => {
+                if r == 0 {
+                    Err(VMError::DividingByZero)
+                } else {
+                    Ok(Value::Integer(l.wrapping_rem(r)))
+                }
+            }
+            (Value::Integer(l), Value::Real(r)) => Ok(Value::Real(l as f64 % r)),
+            (Value::Real(l), Value::Integer(r)) => Ok(Value::Real(l % r as f64)),
+            (Value::Real(l), Value::Real(r)) => Ok(Value::Real(l % r)),
+            _ => self.op_error("%", l, r),
+        }
+    }
+
     pub fn addict(&mut self) -> VMResult<()> {
         self.binary(Self::op_addict)
     }
@@ -136,5 +152,9 @@ impl<S: Stack> State<S> {
 
     pub fn divide(&mut self) -> VMResult<()> {
         self.binary(Self::op_divide)
+    }
+
+    pub fn module(&mut self) -> VMResult<()> {
+        self.binary(Self::op_module)
     }
 }

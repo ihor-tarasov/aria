@@ -21,7 +21,7 @@ fn lex_number<R: Reader>(reader: &mut R, c: u8) -> Token {
                 digits_after_dot = 1;
                 reader.advance();
             } else {
-                break; // We supporting only one '.' in number.
+                break;
             }
         } else {
             break;
